@@ -37,6 +37,7 @@ font-size:60px;
   position: sticky;
   top: 0;
   overflow: hidden;
+	z-index:2;
 }
 
 /* Navbar links */
