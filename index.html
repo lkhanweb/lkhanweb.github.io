@@ -179,8 +179,20 @@ document.addEventListener("DOMContentLoaded", function () {
         tooltip.classList.add("tooltip");
         document.body.appendChild(tooltip);
 
+        tooltip.style.position = "absolute";
+        tooltip.style.backgroundColor = "black";
+        tooltip.style.color = "white";
+        tooltip.style.padding = "5px 10px";
+        tooltip.style.borderRadius = "5px";
+        tooltip.style.fontSize = "12px";
+        tooltip.style.cursor = "pointer";
+        tooltip.style.display = "none";
+        tooltip.style.zIndex = "1000";
+
         tooltip.addEventListener("click", function () {
-            removeHighlight(tooltip.targetElement);
+            if (tooltip.targetElement) {
+                removeHighlight(tooltip.targetElement);
+            }
             tooltip.style.display = "none";
         });
 
@@ -188,8 +200,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function showTooltip(element, x, y) {
-        tooltip.style.left = `${x + 5}px`;
-        tooltip.style.top = `${y + 5}px`;
+        tooltip.style.left = `${x + 10}px`;
+        tooltip.style.top = `${y + 10}px`;
         tooltip.style.display = "block";
         tooltip.targetElement = element;
     }
