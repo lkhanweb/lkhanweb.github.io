@@ -3,15 +3,6 @@
 <title>Khan's Web Design</title>
 <link rel="stylesheet" href="./style.css" type="text/css">
 <link rel="shortcut icon" type="image/x-icon" href="/lkhan.png">
-	<style>
-		            .yellow-highlight {
-                background-color: #FF9;
-            }
-
-            .blue-highlight {
-                background-color: #9FF;
-            }
-</style>
 </head>
 	<body>
 
@@ -37,12 +28,59 @@
 
 
         <script>
-            void function () {
-                var img = document.getElementsByTagName('main')[0].getElementsByTagName('img')[0];
-                img.onerror = function() {
-                    document.getElementById('js-title').setAttribute('style', 'display: block');
-                };
-            }();
+document.addEventListener("DOMContentLoaded", function () {
+    let selectedText = "";
+
+    document.addEventListener("mouseup", function () {
+        let selection = window.getSelection();
+        if (selection.toString().trim() !== "") {
+            selectedText = selection.toString();
+            highlightSelection();
+        }
+    });
+
+    function highlightSelection() {
+        let selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        let range = selection.getRangeAt(0);
+        let span = document.createElement("span");
+        span.style.backgroundColor = "yellow";
+        span.classList.add("highlighted-text");
+
+        range.surroundContents(span);
+        saveHighlights();
+    }
+
+    function saveHighlights() {
+        let highlights = document.querySelectorAll(".highlighted-text");
+        let highlightsData = [];
+
+        highlights.forEach((highlight) => {
+            highlightsData.push(highlight.outerHTML);
+        });
+
+        localStorage.setItem("highlights", JSON.stringify(highlightsData));
+    }
+
+    function loadHighlights() {
+        let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
+        if (savedHighlights) {
+            document.body.innerHTML = document.body.innerHTML.replace(
+                /<\/?span[^>]*>/g,
+                ""
+            ); // Remove old highlights
+            savedHighlights.forEach((highlight) => {
+                document.body.innerHTML = document.body.innerHTML.replace(
+                    highlight.replace(/<span[^>]*>/, ""),
+                    highlight
+                );
+            });
+        }
+    }
+
+    loadHighlights();
+});
         </script>
         <section class="op-panel">
             <div>
