@@ -5,7 +5,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="/lkhan.png">
 
 <style>
-	.highlighted-text {
+.highlighted-text {
     background-color: yellow;
     cursor: pointer;
 }
@@ -22,6 +22,44 @@
     z-index: 1000;
 }
 
+/* Sidebar */
+.highlight-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background-color: white;
+    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    overflow-y: auto;
+    transition: transform 0.3s ease-in-out;
+}
+
+.highlight-sidebar.collapsed {
+    transform: translateX(100%);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#highlight-list {
+    list-style: none;
+    padding: 0;
+}
+
+#highlight-list li {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+
+#highlight-list li:hover {
+    background-color: #f0f0f0;
+}
 </style>
 	
 	
@@ -50,9 +88,10 @@
 
 
         <script>
-		document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     let selectedText = "";
     let tooltip = createTooltip();
+    let sidebar = createSidebar();
 
     document.addEventListener("mouseup", function () {
         let selection = window.getSelection();
@@ -78,9 +117,11 @@
         let span = document.createElement("span");
         span.style.backgroundColor = "yellow";
         span.classList.add("highlighted-text");
+        span.dataset.id = Date.now(); // Unique ID for reference
 
         range.surroundContents(span);
         saveHighlights();
+        updateSidebar();
     }
 
     function createTooltip() {
@@ -109,6 +150,7 @@
         let parent = element.parentNode;
         parent.replaceChild(document.createTextNode(element.textContent), element);
         saveHighlights();
+        updateSidebar();
     }
 
     function saveHighlights() {
@@ -116,7 +158,11 @@
         let highlightsData = [];
 
         highlights.forEach((highlight) => {
-            highlightsData.push(highlight.outerHTML);
+            highlightsData.push({
+                id: highlight.dataset.id,
+                text: highlight.textContent,
+                position: highlight.getBoundingClientRect().top + window.scrollY,
+            });
         });
 
         localStorage.setItem("highlights", JSON.stringify(highlightsData));
@@ -125,16 +171,56 @@
     function loadHighlights() {
         let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
         if (savedHighlights) {
-            document.body.innerHTML = document.body.innerHTML.replace(/<\/?span[^>]*>/g, ""); // Remove old highlights
-            savedHighlights.forEach((highlight) => {
-                document.body.innerHTML = document.body.innerHTML.replace(highlight.replace(/<span[^>]*>/, ""), highlight);
+            savedHighlights.forEach((highlightData) => {
+                let elements = document.body.innerHTML;
+                let highlightTag = `<span class="highlighted-text" data-id="${highlightData.id}" style="background-color:yellow;">${highlightData.text}</span>`;
+                document.body.innerHTML = elements.replace(highlightData.text, highlightTag);
+            });
+        }
+        updateSidebar();
+    }
+
+    function createSidebar() {
+        let sidebar = document.createElement("div");
+        sidebar.classList.add("highlight-sidebar");
+        sidebar.innerHTML = `
+            <div class="sidebar-header">
+                <h3>Highlights</h3>
+                <button id="close-sidebar">✖</button>
+            </div>
+            <ul id="highlight-list"></ul>
+        `;
+        document.body.appendChild(sidebar);
+
+        document.getElementById("close-sidebar").addEventListener("click", function () {
+            sidebar.classList.toggle("collapsed");
+        });
+
+        return sidebar;
+    }
+
+    function updateSidebar() {
+        let highlightList = document.getElementById("highlight-list");
+        highlightList.innerHTML = ""; // Clear existing list
+
+        let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
+        if (savedHighlights) {
+            savedHighlights.forEach((highlightData) => {
+                let listItem = document.createElement("li");
+                listItem.textContent = highlightData.text;
+                listItem.dataset.id = highlightData.id;
+
+                listItem.addEventListener("click", function () {
+                    window.scrollTo({ top: highlightData.position - 50, behavior: "smooth" });
+                });
+
+                highlightList.appendChild(listItem);
             });
         }
     }
 
     loadHighlights();
 });
-
 	</script>
 
 	
