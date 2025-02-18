@@ -269,12 +269,14 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
         document.body.appendChild(sidebar);
 
+        // Event listener for Clear All
         document.getElementById("clear-highlights").addEventListener("click", function () {
             localStorage.removeItem("highlights");
             document.querySelectorAll(".highlighted-text").forEach((el) => el.outerHTML = el.textContent);
             updateSidebar();
         });
 
+        // Event listener for Close Sidebar
         document.getElementById("close-sidebar").addEventListener("click", function () {
             sidebar.classList.add("collapsed");
         });
@@ -334,6 +336,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 highlightList.appendChild(listItem);
             });
         }
+
+        // Reattach event listeners after updating the sidebar
+        attachSidebarListeners();
+    }
+
+    function attachSidebarListeners() {
+        // Ensure that Clear All and Close Sidebar buttons work after update
+        document.getElementById("clear-highlights").addEventListener("click", function () {
+            localStorage.removeItem("highlights");
+            document.querySelectorAll(".highlighted-text").forEach((el) => el.outerHTML = el.textContent);
+            updateSidebar();
+        });
+
+        document.getElementById("close-sidebar").addEventListener("click", function () {
+            document.querySelector(".highlight-sidebar").classList.add("collapsed");
+        });
     }
 
     loadHighlights(); // Load highlights from cache when page loads
