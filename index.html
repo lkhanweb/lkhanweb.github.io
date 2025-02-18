@@ -3,6 +3,28 @@
 <title>Khan's Web Design</title>
 <link rel="stylesheet" href="./style.css" type="text/css">
 <link rel="shortcut icon" type="image/x-icon" href="/lkhan.png">
+
+<style>
+	.highlighted-text {
+    background-color: yellow;
+    cursor: pointer;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: black;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    display: none;
+    z-index: 1000;
+}
+
+</style>
+	
+	
 </head>
 	<body>
 
@@ -28,14 +50,23 @@
 
 
         <script>
-document.addEventListener("DOMContentLoaded", function () {
+		document.addEventListener("DOMContentLoaded", function () {
     let selectedText = "";
+    let tooltip = createTooltip();
 
     document.addEventListener("mouseup", function () {
         let selection = window.getSelection();
         if (selection.toString().trim() !== "") {
             selectedText = selection.toString();
             highlightSelection();
+        }
+    });
+
+    document.addEventListener("click", function (event) {
+        if (event.target.classList.contains("highlighted-text")) {
+            showTooltip(event.target, event.pageX, event.pageY);
+        } else {
+            tooltip.style.display = "none";
         }
     });
 
@@ -49,6 +80,34 @@ document.addEventListener("DOMContentLoaded", function () {
         span.classList.add("highlighted-text");
 
         range.surroundContents(span);
+        saveHighlights();
+    }
+
+    function createTooltip() {
+        let tooltip = document.createElement("div");
+        tooltip.innerHTML = "Remove highlight";
+        tooltip.classList.add("tooltip");
+        document.body.appendChild(tooltip);
+
+        tooltip.addEventListener("click", function () {
+            removeHighlight(tooltip.targetElement);
+            tooltip.style.display = "none";
+        });
+
+        return tooltip;
+    }
+
+    function showTooltip(element, x, y) {
+        tooltip.style.left = `${x + 5}px`;
+        tooltip.style.top = `${y + 5}px`;
+        tooltip.style.display = "block";
+        tooltip.targetElement = element;
+    }
+
+    function removeHighlight(element) {
+        if (!element) return;
+        let parent = element.parentNode;
+        parent.replaceChild(document.createTextNode(element.textContent), element);
         saveHighlights();
     }
 
@@ -66,22 +125,17 @@ document.addEventListener("DOMContentLoaded", function () {
     function loadHighlights() {
         let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
         if (savedHighlights) {
-            document.body.innerHTML = document.body.innerHTML.replace(
-                /<\/?span[^>]*>/g,
-                ""
-            ); // Remove old highlights
+            document.body.innerHTML = document.body.innerHTML.replace(/<\/?span[^>]*>/g, ""); // Remove old highlights
             savedHighlights.forEach((highlight) => {
-                document.body.innerHTML = document.body.innerHTML.replace(
-                    highlight.replace(/<span[^>]*>/, ""),
-                    highlight
-                );
+                document.body.innerHTML = document.body.innerHTML.replace(highlight.replace(/<span[^>]*>/, ""), highlight);
             });
         }
     }
 
     loadHighlights();
 });
-        </script>
+
+	</script>
 
 	
 
