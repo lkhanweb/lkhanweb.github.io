@@ -305,6 +305,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 let listItem = document.createElement("li");
                 listItem.textContent = highlightData.text;
                 listItem.dataset.id = highlightData.id;
+                listItem.dataset.position = highlightData.position; // Store the position
 
                 let removeButton = document.createElement("button");
                 removeButton.innerHTML = "❌";
@@ -318,6 +319,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     saveHighlights();
                     updateSidebar();
+                });
+
+                // Event listener for scrolling to the highlight when clicked
+                listItem.addEventListener("click", function () {
+                    window.scrollTo({
+                        top: highlightData.position,
+                        behavior: "smooth",
+                    });
+                    document.querySelector(".highlight-sidebar").classList.add("collapsed");
                 });
 
                 listItem.appendChild(removeButton);
