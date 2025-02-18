@@ -107,6 +107,13 @@
 .toggle-sidebar-btn:hover {
     background-color: #0056b3;
 }
+
+/* Mobile-Friendly Adjustments */
+@media (max-width: 768px) {
+    .highlight-sidebar {
+        width: 200px;
+    }
+}
 </style>
 	
 	
@@ -303,6 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 removeButton.innerHTML = "❌";
                 removeButton.classList.add("remove-highlight-btn");
 
+                // Attach event listener to the "X" button
                 removeButton.addEventListener("click", function () {
                     let highlightElement = document.querySelector(`[data-id="${highlightData.id}"]`);
                     if (highlightElement) {
@@ -320,6 +328,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     loadHighlights(); // Load highlights from cache when page loads
 });
+
 	</script>
 
 	
