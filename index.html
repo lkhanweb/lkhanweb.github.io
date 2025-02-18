@@ -5,61 +5,67 @@
 <link rel="shortcut icon" type="image/x-icon" href="/lkhan.png">
 
 <style>
-.highlighted-text {
-    background-color: yellow;
-    cursor: pointer;
-}
+			.highlighted-text {
+	    background-color: yellow;
+	    cursor: pointer;
+	}
+	
+	.tooltip {
+	    position: absolute;
+	    background-color: black;
+	    color: white;
+	    padding: 5px 10px;
+	    border-radius: 5px;
+	    font-size: 12px;
+	    cursor: pointer;
+	    display: none;
+	    z-index: 1000;
+	}
+	
+	/* Sidebar */
+	.highlight-sidebar {
+	    position: fixed;
+	    right: 0;
+	    top: 0;
+	    width: 250px;
+	    height: 100vh;
+	    background-color: white;
+	    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.2);
+	    padding: 15px;
+	    overflow-y: auto;
+	    transition: transform 0.3s ease-in-out;
+	}
+	
+	.sidebar-header {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	}
+	
+	#highlight-list {
+	    list-style: none;
+	    padding: 0;
+	}
+	
+	#highlight-list li {
+	    padding: 8px;
+	    border-bottom: 1px solid #ddd;
+	    cursor: pointer;
+	}
+	
+	#highlight-list li:hover {
+	    background-color: #f0f0f0;
+	}
+	
+	#clear-highlights {
+	    background: red;
+	    color: white;
+	    border: none;
+	    padding: 5px 10px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	}
 
-.tooltip {
-    position: absolute;
-    background-color: black;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    cursor: pointer;
-    display: none;
-    z-index: 1000;
-}
-
-/* Sidebar */
-.highlight-sidebar {
-    position: fixed;
-    right: 0;
-    top: 0;
-    width: 250px;
-    height: 100vh;
-    background-color: white;
-    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    overflow-y: auto;
-    transition: transform 0.3s ease-in-out;
-}
-
-.highlight-sidebar.collapsed {
-    transform: translateX(100%);
-}
-
-.sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-#highlight-list {
-    list-style: none;
-    padding: 0;
-}
-
-#highlight-list li {
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-    cursor: pointer;
-}
-
-#highlight-list li:hover {
-    background-color: #f0f0f0;
-}
 </style>
 	
 	
@@ -89,14 +95,12 @@
 
         <script>
 document.addEventListener("DOMContentLoaded", function () {
-    let selectedText = "";
     let tooltip = createTooltip();
     let sidebar = createSidebar();
 
     document.addEventListener("mouseup", function () {
         let selection = window.getSelection();
         if (selection.toString().trim() !== "") {
-            selectedText = selection.toString();
             highlightSelection();
         }
     });
@@ -117,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let span = document.createElement("span");
         span.style.backgroundColor = "yellow";
         span.classList.add("highlighted-text");
-        span.dataset.id = Date.now(); // Unique ID for reference
+        span.dataset.id = Date.now(); // Unique ID
 
         range.surroundContents(span);
         saveHighlights();
@@ -165,6 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
+        // Store highlights in localStorage (Persistent Cache)
         localStorage.setItem("highlights", JSON.stringify(highlightsData));
     }
 
@@ -186,14 +191,16 @@ document.addEventListener("DOMContentLoaded", function () {
         sidebar.innerHTML = `
             <div class="sidebar-header">
                 <h3>Highlights</h3>
-                <button id="close-sidebar">✖</button>
+                <button id="clear-highlights">🗑 Clear All</button>
             </div>
             <ul id="highlight-list"></ul>
         `;
         document.body.appendChild(sidebar);
 
-        document.getElementById("close-sidebar").addEventListener("click", function () {
-            sidebar.classList.toggle("collapsed");
+        document.getElementById("clear-highlights").addEventListener("click", function () {
+            localStorage.removeItem("highlights");
+            document.querySelectorAll(".highlighted-text").forEach((el) => el.outerHTML = el.textContent);
+            updateSidebar();
         });
 
         return sidebar;
@@ -219,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    loadHighlights();
+    loadHighlights(); // Load highlights from cache when page loads
 });
 	</script>
 
