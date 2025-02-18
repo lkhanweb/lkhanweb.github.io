@@ -74,7 +74,7 @@
     border-radius: 5px;
 }
 
-#toggle-sidebar {
+#close-sidebar {
     background: black;
     color: white;
     border: none;
@@ -88,6 +88,24 @@
     border: none;
     color: red;
     cursor: pointer;
+}
+
+/* Toggle Button */
+.toggle-sidebar-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.toggle-sidebar-btn:hover {
+    background-color: #0056b3;
 }
 </style>
 	
@@ -238,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <div class="sidebar-header">
                 <h3>Highlights</h3>
                 <button id="clear-highlights">🗑 Clear All</button>
-                <button id="toggle-sidebar">❌</button>
+                <button id="close-sidebar">❌</button>
             </div>
             <ul id="highlight-list"></ul>
         `;
@@ -250,11 +268,24 @@ document.addEventListener("DOMContentLoaded", function () {
             updateSidebar();
         });
 
-        document.getElementById("toggle-sidebar").addEventListener("click", function () {
-            sidebar.classList.toggle("collapsed");
+        document.getElementById("close-sidebar").addEventListener("click", function () {
+            sidebar.classList.add("collapsed");
         });
 
         return sidebar;
+    }
+
+    function createToggleButton() {
+        let button = document.createElement("button");
+        button.innerHTML = "📂 Highlights";
+        button.classList.add("toggle-sidebar-btn");
+        document.body.appendChild(button);
+
+        button.addEventListener("click", function () {
+            document.querySelector(".highlight-sidebar").classList.toggle("collapsed");
+        });
+
+        return button;
     }
 
     function updateSidebar() {
