@@ -208,12 +208,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let sidebar = createSidebar();
     let toggleButton = createToggleButton();
 
-    document.addEventListener("mouseup", function () {
-        let selection = window.getSelection();
-        if (selection.toString().trim() !== "") {
-            highlightSelection();
-        }
-    });
+    document.addEventListener("mouseup", handleSelection);
+    document.addEventListener("touchend", handleSelection); // Mobile support
 
     document.addEventListener("click", function (event) {
         if (event.target.classList.contains("highlighted-text")) {
@@ -222,6 +218,13 @@ document.addEventListener("DOMContentLoaded", function () {
             tooltip.style.display = "none";
         }
     });
+
+    function handleSelection() {
+        let selection = window.getSelection();
+        if (selection.toString().trim() !== "") {
+            highlightSelection();
+        }
+    }
 
     function highlightSelection() {
         let selection = window.getSelection();
@@ -316,7 +319,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function createSidebar() {
         let sidebar = document.createElement("div");
-        sidebar.classList.add("highlight-sidebar");
+        sidebar.classList.add("highlight-sidebar", "collapsed");
         sidebar.innerHTML = `
             <div class="sidebar-header">
                 <h3>Highlights</h3>
@@ -346,8 +349,10 @@ document.addEventListener("DOMContentLoaded", function () {
         button.classList.add("toggle-sidebar-btn");
         document.body.appendChild(button);
 
-        button.addEventListener("click", function () {
-            document.querySelector(".highlight-sidebar").classList.toggle("collapsed");
+        button.addEventListener("click", function (event) {
+            let sidebar = document.querySelector(".highlight-sidebar");
+            sidebar.classList.toggle("collapsed");
+            event.preventDefault(); // Fixes potential mobile interaction issues
         });
 
         return button;
