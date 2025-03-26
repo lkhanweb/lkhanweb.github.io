@@ -203,203 +203,40 @@ Lacinia ipsum congue iaculis varius ligula vel. Habitant tellus convallis vulput
 		
 		
 		<script>
-document.addEventListener("DOMContentLoaded", function () {
-    let tooltip = createTooltip();
-    let sidebar = createSidebar();
-    let toggleButton = createToggleButton();
+/* Toggle Button */
+.toggle-sidebar-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 18px; /* Increased padding for better touch */
+    font-size: 16px; /* Increased font size */
+    font-weight: bold;
+    border-radius: 8px;
+    transition: background 0.3s, transform 0.2s;
+    z-index: 1001; /* Ensures it's always visible */
+}
 
-    document.addEventListener("mouseup", handleSelection);
-    document.addEventListener("touchend", handleSelection); // Mobile support
+/* Hover & Active States */
+.toggle-sidebar-btn:hover {
+    background-color: #0056b3;
+}
 
-    document.addEventListener("click", function (event) {
-        if (event.target.classList.contains("highlighted-text")) {
-            showTooltip(event.target, event.pageX, event.pageY);
-        } else {
-            tooltip.style.display = "none";
-        }
-    });
+.toggle-sidebar-btn:active {
+    transform: scale(0.95); /* Adds a slight press effect */
+}
 
-    function handleSelection() {
-        let selection = window.getSelection();
-        if (selection.toString().trim() !== "") {
-            highlightSelection();
-        }
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .toggle-sidebar-btn {
+        font-size: 18px; /* Even larger text for mobile */
+        padding: 14px 20px;
+        bottom: 15px;
+        left: 15px;
     }
-
-    function highlightSelection() {
-        let selection = window.getSelection();
-        if (!selection.rangeCount) return;
-
-        let range = selection.getRangeAt(0);
-        let span = document.createElement("span");
-        span.classList.add("highlighted-text");
-        span.dataset.id = Date.now();
-        span.textContent = selection.toString();
-
-        range.deleteContents();
-        range.insertNode(span);
-
-        saveHighlights();
-        updateSidebar();
-    }
-
-    function createTooltip() {
-        let tooltip = document.createElement("div");
-        tooltip.innerHTML = "Remove highlight";
-        tooltip.classList.add("tooltip");
-        document.body.appendChild(tooltip);
-
-        tooltip.addEventListener("click", function () {
-            if (tooltip.targetElement) {
-                removeHighlight(tooltip.targetElement);
-            }
-            tooltip.style.display = "none";
-        });
-
-        return tooltip;
-    }
-
-    function showTooltip(element, x, y) {
-        tooltip.style.left = `${x + 10}px`;
-        tooltip.style.top = `${y + 10}px`;
-        tooltip.style.display = "block";
-        tooltip.targetElement = element;
-    }
-
-    function removeHighlight(element) {
-        if (!element) return;
-        let textNode = document.createTextNode(element.textContent);
-        element.replaceWith(textNode);
-        saveHighlights();
-        updateSidebar();
-    }
-
-    function saveHighlights() {
-        let highlights = document.querySelectorAll(".highlighted-text");
-        let highlightsData = [];
-
-        highlights.forEach((highlight) => {
-            highlightsData.push({
-                id: highlight.dataset.id,
-                text: highlight.textContent,
-                position: highlight.getBoundingClientRect().top + window.scrollY,
-            });
-        });
-
-        localStorage.setItem("highlights", JSON.stringify(highlightsData));
-    }
-
-    function loadHighlights() {
-        let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
-        if (savedHighlights) {
-            savedHighlights.forEach((highlightData) => {
-                let foundText = findAndHighlightText(highlightData.text, highlightData.id);
-                if (foundText) foundText.dataset.id = highlightData.id;
-            });
-        }
-        updateSidebar();
-    }
-
-    function findAndHighlightText(text, id) {
-        let elements = document.body.childNodes;
-        for (let node of elements) {
-            if (node.nodeType === 3 && node.nodeValue.includes(text)) {
-                let span = document.createElement("span");
-                span.classList.add("highlighted-text");
-                span.style.backgroundColor = "yellow";
-                span.dataset.id = id;
-                span.textContent = text;
-
-                node.replaceWith(span);
-                return span;
-            }
-        }
-        return null;
-    }
-
-    function createSidebar() {
-        let sidebar = document.createElement("div");
-        sidebar.classList.add("highlight-sidebar", "collapsed");
-        sidebar.innerHTML = `
-            <div class="sidebar-header">
-                <h3>Highlights</h3>
-                <button id="clear-highlights">🗑 Clear All</button>
-                <button id="close-sidebar">❌</button>
-            </div>
-            <ul id="highlight-list"></ul>
-        `;
-        document.body.appendChild(sidebar);
-
-        document.getElementById("clear-highlights").addEventListener("click", function () {
-            localStorage.removeItem("highlights");
-            document.querySelectorAll(".highlighted-text").forEach((el) => el.replaceWith(document.createTextNode(el.textContent)));
-            updateSidebar();
-        });
-
-        document.getElementById("close-sidebar").addEventListener("click", function () {
-            sidebar.classList.add("collapsed");
-        });
-
-        return sidebar;
-    }
-
-    function createToggleButton() {
-        let button = document.createElement("button");
-        button.innerHTML = "📂 Highlights";
-        button.classList.add("toggle-sidebar-btn");
-        document.body.appendChild(button);
-
-        button.addEventListener("click", function (event) {
-            let sidebar = document.querySelector(".highlight-sidebar");
-            sidebar.classList.toggle("collapsed");
-            event.preventDefault(); // Fixes potential mobile interaction issues
-        });
-
-        return button;
-    }
-
-    function updateSidebar() {
-        let highlightList = document.getElementById("highlight-list");
-        highlightList.innerHTML = "";
-
-        let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
-        if (savedHighlights) {
-            savedHighlights.forEach((highlightData) => {
-                let listItem = document.createElement("li");
-                listItem.textContent = highlightData.text;
-                listItem.dataset.id = highlightData.id;
-                listItem.dataset.position = highlightData.position;
-
-                let removeButton = document.createElement("button");
-                removeButton.innerHTML = "❌";
-                removeButton.classList.add("remove-highlight-btn");
-
-                removeButton.addEventListener("click", function () {
-                    let highlightElement = document.querySelector(`[data-id="${highlightData.id}"]`);
-                    if (highlightElement) {
-                        highlightElement.replaceWith(document.createTextNode(highlightElement.textContent));
-                    }
-                    saveHighlights();
-                    updateSidebar();
-                });
-
-                listItem.addEventListener("click", function () {
-                    window.scrollTo({
-                        top: highlightData.position - 50,
-                        behavior: "smooth",
-                    });
-                    document.querySelector(".highlight-sidebar").classList.add("collapsed");
-                });
-
-                listItem.appendChild(removeButton);
-                highlightList.appendChild(listItem);
-            });
-        }
-    }
-
-    loadHighlights();
-});
-
+}
 	</script>
 
 	
