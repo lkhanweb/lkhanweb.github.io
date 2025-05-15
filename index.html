@@ -203,13 +203,14 @@ Lacinia ipsum congue iaculis varius ligula vel. Habitant tellus convallis vulput
 		
 		
 <script>
+<script>
 document.addEventListener("DOMContentLoaded", function () {
     let tooltip = createTooltip();
     let sidebar = createSidebar();
     let toggleButton = createToggleButton();
 
     document.addEventListener("mouseup", handleSelection);
-    document.addEventListener("touchend", handleSelection); // Mobile support
+    document.addEventListener("touchend", handleSelection);
 
     document.addEventListener("click", function (event) {
         if (event.target.classList.contains("highlighted-text")) {
@@ -231,10 +232,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!selection.rangeCount) return;
 
         let range = selection.getRangeAt(0);
+        let selectedText = selection.toString();
         let span = document.createElement("span");
         span.classList.add("highlighted-text");
         span.dataset.id = Date.now();
-        span.textContent = selection.toString();
+        span.textContent = selectedText;
+
+        let parent = range.startContainer.parentElement;
+        let parentSelector = getUniqueSelector(parent);
 
         range.deleteContents();
         range.insertNode(span);
@@ -279,10 +284,11 @@ document.addEventListener("DOMContentLoaded", function () {
         let highlightsData = [];
 
         highlights.forEach((highlight) => {
+            let parent = highlight.parentElement;
             highlightsData.push({
                 id: highlight.dataset.id,
                 text: highlight.textContent,
-                position: highlight.getBoundingClientRect().top + window.scrollY,
+                parentSelector: getUniqueSelector(parent),
             });
         });
 
@@ -292,29 +298,51 @@ document.addEventListener("DOMContentLoaded", function () {
     function loadHighlights() {
         let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
         if (savedHighlights) {
-            savedHighlights.forEach((highlightData) => {
-                let foundText = findAndHighlightText(highlightData.text, highlightData.id);
-                if (foundText) foundText.dataset.id = highlightData.id;
+            savedHighlights.forEach(({ text, id, parentSelector }) => {
+                let foundText = findAndHighlightText(text, id, parentSelector);
+                if (foundText) foundText.dataset.id = id;
             });
         }
         updateSidebar();
     }
 
-    function findAndHighlightText(text, id) {
-        let elements = document.body.childNodes;
-        for (let node of elements) {
-            if (node.nodeType === 3 && node.nodeValue.includes(text)) {
-                let span = document.createElement("span");
-                span.classList.add("highlighted-text");
-                span.style.backgroundColor = "yellow";
-                span.dataset.id = id;
-                span.textContent = text;
+    function findAndHighlightText(text, id, parentSelector) {
+        const parent = document.querySelector(parentSelector);
+        if (!parent) return null;
 
-                node.replaceWith(span);
+        const walker = document.createTreeWalker(parent, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            let node = walker.currentNode;
+            let index = node.nodeValue.indexOf(text);
+            if (index !== -1) {
+                const range = document.createRange();
+                range.setStart(node, index);
+                range.setEnd(node, index + text.length);
+
+                const span = document.createElement("span");
+                span.classList.add("highlighted-text");
+                span.dataset.id = id;
+                range.deleteContents();
+                range.insertNode(span);
+                span.textContent = text;
                 return span;
             }
         }
         return null;
+    }
+
+    function getUniqueSelector(el) {
+        if (!el) return null;
+        if (el.id) return `#${el.id}`;
+        if (el === document.body) return "body";
+
+        let path = [];
+        while (el && el.nodeType === 1 && el !== document.body) {
+            let index = Array.from(el.parentNode.children).indexOf(el) + 1;
+            path.unshift(`${el.tagName.toLowerCase()}:nth-child(${index})`);
+            el = el.parentElement;
+        }
+        return path.length ? "body > " + path.join(" > ") : null;
     }
 
     function createSidebar() {
@@ -352,7 +380,7 @@ document.addEventListener("DOMContentLoaded", function () {
         button.addEventListener("click", function (event) {
             let sidebar = document.querySelector(".highlight-sidebar");
             sidebar.classList.toggle("collapsed");
-            event.preventDefault(); // Fixes potential mobile interaction issues
+            event.preventDefault();
         });
 
         return button;
@@ -368,7 +396,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 let listItem = document.createElement("li");
                 listItem.textContent = highlightData.text;
                 listItem.dataset.id = highlightData.id;
-                listItem.dataset.position = highlightData.position;
 
                 let removeButton = document.createElement("button");
                 removeButton.innerHTML = "❌";
@@ -384,11 +411,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
 
                 listItem.addEventListener("click", function () {
-                    window.scrollTo({
-                        top: highlightData.position - 50,
-                        behavior: "smooth",
-                    });
-                    document.querySelector(".highlight-sidebar").classList.add("collapsed");
+                    let highlightElement = document.querySelector(`[data-id="${highlightData.id}"]`);
+                    if (highlightElement) {
+                        window.scrollTo({
+                            top: highlightElement.getBoundingClientRect().top + window.scrollY - 50,
+                            behavior: "smooth",
+                        });
+                        document.querySelector(".highlight-sidebar").classList.add("collapsed");
+                    }
                 });
 
                 listItem.appendChild(removeButton);
@@ -399,6 +429,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     loadHighlights();
 });
+</script>
+
 
 
 	</script>
