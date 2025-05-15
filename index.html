@@ -9,103 +9,41 @@
     background-color: yellow;
     cursor: pointer;
 }
-
 .tooltip {
     position: absolute;
-    background-color: black;
+    background: #333;
     color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
     display: none;
     z-index: 1000;
 }
-
-/* Sidebar */
 .highlight-sidebar {
     position: fixed;
     right: 0;
     top: 0;
     width: 250px;
-    height: 100vh;
-    background-color: white;
-    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.2);
-    padding: 15px;
+    height: 100%;
+    background: white;
+    border-left: 1px solid #ccc;
+    padding: 10px;
     overflow-y: auto;
-    transition: transform 0.3s ease-in-out;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
 }
-
 .highlight-sidebar.collapsed {
-    transform: translateX(100%);
+    display: none;
 }
-
-/* Sidebar header */
-.sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-#highlight-list {
-    list-style: none;
-    padding: 0;
-}
-
-#highlight-list li {
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-#highlight-list li:hover {
-    background-color: #f0f0f0;
-}
-
-#clear-highlights {
-    background: red;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-#close-sidebar {
-    background: black;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-.remove-highlight-btn {
-    background: none;
-    border: none;
-    color: red;
-    cursor: pointer;
-}
-
-/* Toggle Button */
 .toggle-sidebar-btn {
     position: fixed;
-    bottom: 20px;
-    left: 20px;
-    background-color: #007bff;
-    color: white;
+    right: 10px;
+    bottom: 10px;
+    z-index: 999;
+    padding: 8px 12px;
     border: none;
-    padding: 10px 15px;
+    background: #333;
+    color: white;
+    border-radius: 4px;
     cursor: pointer;
-    border-radius: 5px;
-    transition: background 0.3s;
-}
-
-.toggle-sidebar-btn:hover {
-    background-color: #0056b3;
 }
 
 /* Mobile-Friendly Adjustments */
@@ -203,7 +141,6 @@ Lacinia ipsum congue iaculis varius ligula vel. Habitant tellus convallis vulput
 		
 		
 <script>
-<script>
 document.addEventListener("DOMContentLoaded", function () {
     let tooltip = createTooltip();
     let sidebar = createSidebar();
@@ -233,16 +170,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let range = selection.getRangeAt(0);
         let selectedText = selection.toString();
+        let id = Date.now();
+
         let span = document.createElement("span");
         span.classList.add("highlighted-text");
-        span.dataset.id = Date.now();
+        span.dataset.id = id;
         span.textContent = selectedText;
 
-        let parent = range.startContainer.parentElement;
-        let parentSelector = getUniqueSelector(parent);
+        const container = range.startContainer;
+        const parent = container.parentElement || container;
 
+        const parentSelector = getUniqueSelector(parent);
+        if (!parentSelector) return;
+
+        // Replace selected text with span
         range.deleteContents();
         range.insertNode(span);
+
+        span.dataset.selector = parentSelector;
 
         saveHighlights();
         updateSidebar();
@@ -280,69 +225,66 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function saveHighlights() {
-        let highlights = document.querySelectorAll(".highlighted-text");
-        let highlightsData = [];
+        const highlights = document.querySelectorAll(".highlighted-text");
+        const data = [];
 
-        highlights.forEach((highlight) => {
-            let parent = highlight.parentElement;
-            highlightsData.push({
-                id: highlight.dataset.id,
-                text: highlight.textContent,
-                parentSelector: getUniqueSelector(parent),
+        highlights.forEach((el) => {
+            data.push({
+                id: el.dataset.id,
+                text: el.textContent,
+                selector: el.dataset.selector || getUniqueSelector(el.parentElement),
             });
         });
 
-        localStorage.setItem("highlights", JSON.stringify(highlightsData));
+        localStorage.setItem("highlights", JSON.stringify(data));
     }
 
     function loadHighlights() {
-        let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
-        if (savedHighlights) {
-            savedHighlights.forEach(({ text, id, parentSelector }) => {
-                let foundText = findAndHighlightText(text, id, parentSelector);
-                if (foundText) foundText.dataset.id = id;
-            });
-        }
+        const highlights = JSON.parse(localStorage.getItem("highlights")) || [];
+        highlights.forEach(({ id, text, selector }) => {
+            const parent = document.querySelector(selector);
+            if (!parent) return;
+
+            const walker = document.createTreeWalker(parent, NodeFilter.SHOW_TEXT);
+            while (walker.nextNode()) {
+                let node = walker.currentNode;
+                let index = node.nodeValue.indexOf(text);
+                if (index !== -1) {
+                    const range = document.createRange();
+                    range.setStart(node, index);
+                    range.setEnd(node, index + text.length);
+
+                    let span = document.createElement("span");
+                    span.classList.add("highlighted-text");
+                    span.dataset.id = id;
+                    span.dataset.selector = selector;
+                    span.textContent = text;
+
+                    range.deleteContents();
+                    range.insertNode(span);
+                    break;
+                }
+            }
+        });
+
         updateSidebar();
     }
 
-    function findAndHighlightText(text, id, parentSelector) {
-        const parent = document.querySelector(parentSelector);
-        if (!parent) return null;
-
-        const walker = document.createTreeWalker(parent, NodeFilter.SHOW_TEXT);
-        while (walker.nextNode()) {
-            let node = walker.currentNode;
-            let index = node.nodeValue.indexOf(text);
-            if (index !== -1) {
-                const range = document.createRange();
-                range.setStart(node, index);
-                range.setEnd(node, index + text.length);
-
-                const span = document.createElement("span");
-                span.classList.add("highlighted-text");
-                span.dataset.id = id;
-                range.deleteContents();
-                range.insertNode(span);
-                span.textContent = text;
-                return span;
-            }
-        }
-        return null;
-    }
-
     function getUniqueSelector(el) {
-        if (!el) return null;
         if (el.id) return `#${el.id}`;
         if (el === document.body) return "body";
 
         let path = [];
         while (el && el.nodeType === 1 && el !== document.body) {
-            let index = Array.from(el.parentNode.children).indexOf(el) + 1;
-            path.unshift(`${el.tagName.toLowerCase()}:nth-child(${index})`);
-            el = el.parentElement;
+            let name = el.nodeName.toLowerCase();
+            let parent = el.parentNode;
+            if (!parent) break;
+            let siblings = Array.from(parent.children).filter(n => n.nodeName.toLowerCase() === name);
+            let index = siblings.indexOf(el) + 1;
+            path.unshift(`${name}:nth-of-type(${index})`);
+            el = parent;
         }
-        return path.length ? "body > " + path.join(" > ") : null;
+        return path.length ? `body > ${path.join(" > ")}` : null;
     }
 
     function createSidebar() {
@@ -358,15 +300,17 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
         document.body.appendChild(sidebar);
 
-        document.getElementById("clear-highlights").addEventListener("click", function () {
+        document.getElementById("clear-highlights").addEventListener("click", () => {
             localStorage.removeItem("highlights");
-            document.querySelectorAll(".highlighted-text").forEach((el) => el.replaceWith(document.createTextNode(el.textContent)));
+            document.querySelectorAll(".highlighted-text").forEach((el) =>
+                el.replaceWith(document.createTextNode(el.textContent))
+            );
             updateSidebar();
         });
 
-        document.getElementById("close-sidebar").addEventListener("click", function () {
-            sidebar.classList.add("collapsed");
-        });
+        document.getElementById("close-sidebar").addEventListener("click", () =>
+            sidebar.classList.add("collapsed")
+        );
 
         return sidebar;
     }
@@ -377,8 +321,7 @@ document.addEventListener("DOMContentLoaded", function () {
         button.classList.add("toggle-sidebar-btn");
         document.body.appendChild(button);
 
-        button.addEventListener("click", function (event) {
-            let sidebar = document.querySelector(".highlight-sidebar");
+        button.addEventListener("click", (event) => {
             sidebar.classList.toggle("collapsed");
             event.preventDefault();
         });
@@ -390,45 +333,43 @@ document.addEventListener("DOMContentLoaded", function () {
         let highlightList = document.getElementById("highlight-list");
         highlightList.innerHTML = "";
 
-        let savedHighlights = JSON.parse(localStorage.getItem("highlights"));
-        if (savedHighlights) {
-            savedHighlights.forEach((highlightData) => {
-                let listItem = document.createElement("li");
-                listItem.textContent = highlightData.text;
-                listItem.dataset.id = highlightData.id;
+        const highlights = JSON.parse(localStorage.getItem("highlights")) || [];
 
-                let removeButton = document.createElement("button");
-                removeButton.innerHTML = "❌";
-                removeButton.classList.add("remove-highlight-btn");
+        highlights.forEach(({ id, text }) => {
+            let listItem = document.createElement("li");
+            listItem.textContent = text;
+            listItem.dataset.id = id;
 
-                removeButton.addEventListener("click", function () {
-                    let highlightElement = document.querySelector(`[data-id="${highlightData.id}"]`);
-                    if (highlightElement) {
-                        highlightElement.replaceWith(document.createTextNode(highlightElement.textContent));
-                    }
-                    saveHighlights();
-                    updateSidebar();
-                });
+            let removeButton = document.createElement("button");
+            removeButton.innerHTML = "❌";
+            removeButton.classList.add("remove-highlight-btn");
 
-                listItem.addEventListener("click", function () {
-                    let highlightElement = document.querySelector(`[data-id="${highlightData.id}"]`);
-                    if (highlightElement) {
-                        window.scrollTo({
-                            top: highlightElement.getBoundingClientRect().top + window.scrollY - 50,
-                            behavior: "smooth",
-                        });
-                        document.querySelector(".highlight-sidebar").classList.add("collapsed");
-                    }
-                });
-
-                listItem.appendChild(removeButton);
-                highlightList.appendChild(listItem);
+            removeButton.addEventListener("click", function () {
+                let highlightElement = document.querySelector(`[data-id="${id}"]`);
+                if (highlightElement) {
+                    highlightElement.replaceWith(document.createTextNode(highlightElement.textContent));
+                }
+                saveHighlights();
+                updateSidebar();
             });
-        }
+
+            listItem.addEventListener("click", function () {
+                let el = document.querySelector(`[data-id="${id}"]`);
+                if (el) {
+                    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 50, behavior: "smooth" });
+                    sidebar.classList.add("collapsed");
+                }
+            });
+
+            listItem.appendChild(removeButton);
+            highlightList.appendChild(listItem);
+        });
     }
 
     loadHighlights();
 });
+</script>
+
 </script>
 
 
